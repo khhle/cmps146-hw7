@@ -67,8 +67,30 @@ def render_ascii_dungeon(design):
     glyph = dict(space='.', wall='W', altar='a', gem='g', trap='_')
     block = ''.join([''.join([glyph[sprite.get((r,c),'space')]+' ' for c in range(width)])+'\n' for r in range(width)])
     return block
+
+def render_ascii_touch(design, target):
+    """Given a dict of predicates, return an ASCII-art depiction where the player explored
+    while in the `target` state."""
+    
+    touch = collections.defaultdict(lambda: '-')
+    for cell, state in design['touch']:
+        if state == target:
+            touch[cell] = str(target)
+    param = dict(design['param'])
+    width = param['width']
+    block = ''.join([''.join([str(touch[r,c])+' ' for c in range(width)])+'\n' for r in range(width)])
+    return block
+
+def side_by_side(*blocks):
+    """Horizontally merge two ASCII-art pictures."""
+    
+    lines = []
+    for tup in zip(*map(lambda b: b.split('\n'), blocks)):
+        lines.append(' '.join(tup))
+    return '\n'.join(lines)
     
 
 #Do the work
 design = solve_randomly("level-core.lp", "level-style.lp", "level-sim.lp","level-shortcuts.lp","--parallel-mode=4")
-print render_ascii_dungeon(design)
+#print render_ascii_dungeon(design)
+print side_by_side(render_ascii_dungeon(design), *[render_ascii_touch(design,i) for i in range(1,4)])
