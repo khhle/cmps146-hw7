@@ -1,13 +1,14 @@
+
 import json
 import sys
+import collections
 
-
-
+# Helper Functions
 def parse_json_result(out):
     """Parse the provided JSON text and extract a dict
     representing the predicates described in the first solver result."""
-    with open(out) as f:
-        result = json.loads(out)
+
+    result = json.loads(out)
     
     assert len(result['Call']) > 0
     assert len(result['Call'][0]['Witnesses']) > 0
@@ -38,6 +39,7 @@ def parse_json_result(out):
 
 
 
+
 def render_ascii_dungeon(design):
     """Given a dict of predicates, return an ASCII-art depiction of the a dungeon."""
     
@@ -48,9 +50,10 @@ def render_ascii_dungeon(design):
     block = ''.join([''.join([glyph[sprite.get((r,c),'space')]+' ' for c in range(width)])+'\n' for r in range(width)])
     return block
 
-# Render the example thingie to the screen
-with open(sys.argv[1]) as myfile:
-    data = myfile.read().replace('\n', '')
-	
-design = parse_json_result(data)
+
+#do the work
+with open(sys.argv[1]) as f:
+    filename = f.read().replace('\n', '')
+
+design = parse_json_result(filename)
 print render_ascii_dungeon(design)
