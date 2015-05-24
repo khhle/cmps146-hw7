@@ -5,26 +5,6 @@ import random
 import sys
 
 # Helper Functions
-def solve(*args):
-    """Run clingo with the provided argument list and return the parsed JSON result."""
-    
-    CLINGO = "clingo"
-    
-    clingo = subprocess.Popen(
-        [CLINGO, "--outf=2"] + list(args),
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE)
-    out, err = clingo.communicate()
-    if err:
-        print err
-        
-    return parse_json_result(out)
-  
-def solve_randomly(*args):
-    """Like solve() but uses a random sign heuristic with a random seed."""
-    args = list(args) + ["--sign-def=3","--seed="+str(random.randint(0,1<<30))]
-    return solve(*args) 
- 
 def parse_json_result(out):
     """Parse the provided JSON text and extract a dict
     representing the predicates described in the first solver result."""
@@ -56,8 +36,21 @@ def parse_json_result(out):
         else:
             preds[atom] = True
     
-    return dict(preds)
- 
+    return dict(preds) 
+    
+def solve():
+    """Run clingo with the provided argument list and return the parsed JSON result."""
+    
+    gringo = subprocess.Popen(['gringo', 'level-core.lp', 'level-style.lp', 'level-sim.lp', 'level-shortcuts.lp'], stdout=subprocess.PIPE, shell=True)
+    reify = subprocess.Popen(['reify'], stdin=gringo.stdout, stdout=subprocess.PIPE, shell=True)
+    clingo = subprocess.Popen(['clingo', 'level-core.lp', 'level-style.lp', 'level-sim.lp', '--outf=2'], stdin=reify.stdout, stdout=subprocess.PIPE, shell=True)
+    out, err = clingo.communicate()
+    if err:
+        print "ERR: " + err
+        
+        
+    return parse_json_result(out)
+    
 def render_ascii_dungeon(design):
     """Given a dict of predicates, return an ASCII-art depiction of the a dungeon."""
     
@@ -67,7 +60,8 @@ def render_ascii_dungeon(design):
     glyph = dict(space='.', wall='W', altar='a', gem='g', trap='_')
     block = ''.join([''.join([glyph[sprite.get((r,c),'space')]+' ' for c in range(width)])+'\n' for r in range(width)])
     return block
-
+	
+	
 def render_ascii_touch(design, target):
     """Given a dict of predicates, return an ASCII-art depiction where the player explored
     while in the `target` state."""
@@ -89,8 +83,6 @@ def side_by_side(*blocks):
         lines.append(' '.join(tup))
     return '\n'.join(lines)
     
-
-#Do the work
-design = solve_randomly("level-core.lp", "level-style.lp", "level-sim.lp","level-shortcuts.lp","--parallel-mode=4")
-#print render_ascii_dungeon(design)
+# Do work
+design = solve()
 print side_by_side(render_ascii_dungeon(design), *[render_ascii_touch(design,i) for i in range(1,4)])
